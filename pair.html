@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>ERANDA MD — Connect</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #e8edf3;
+      --shadow-light: rgba(255,255,255,0.92);
+      --shadow-dark: rgba(163,177,198,0.72);
+      --accent: #a78bfa;
+      --accent2: #7c3aed;
+      --text: #374151;
+      --subtext: #6b7280;
+      --inset-light: rgba(255,255,255,0.85);
+      --inset-dark: rgba(163,177,198,0.55);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: var(--bg);
+      min-height: 100vh;
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 20px;
+    }
+
+    /* ─── BACK LINK ─────────────────────── */
+    .back-link {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background: var(--bg);
+      border: none;
+      border-radius: 12px;
+      padding: 10px 18px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--subtext);
+      cursor: pointer;
+      box-shadow:
+        -4px -4px 10px var(--shadow-light),
+         4px  4px 10px var(--shadow-dark);
+      transition: all 0.25s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+      z-index: 99;
+    }
+
+    .back-link:hover {
+      color: var(--accent2);
+      box-shadow:
+        -2px -2px 6px var(--shadow-light),
+         2px  2px 6px var(--shadow-dark);
+    }
+
+    /* ─── MAIN CARD ─────────────────────── */
+    .card {
+      background: var(--bg);
+      border-radius: 30px;
+      padding: 50px 36px 40px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow:
+        -16px -16px 36px var(--shadow-light),
+         16px  16px 36px var(--shadow-dark);
+      text-align: center;
+      animation: popUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    }
+
+    @keyframes popUp {
+      from { opacity: 0; transform: translateY(40px) scale(0.95); }
+      to   { opacity: 1; transform: translateY(0)    scale(1); }
+    }
+
+    /* ─── LOTUS MINI ────────────────────── */
+    .mini-lotus {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      background: var(--bg);
+      box-shadow:
+        -8px -8px 18px var(--shadow-light),
+         8px  8px 18px var(--shadow-dark);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px;
+      animation: floatMini 4s ease-in-out infinite;
+    }
+
+    @keyframes floatMini {
+      0%, 100% { transform: translateY(0); }
+      50%       { transform: translateY(-6px); }
+    }
+
+    .mini-lotus svg { width: 56px; height: 56px; }
+
+    /* ─── HEADINGS ──────────────────────── */
+    .tag {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--accent2);
+      margin-bottom: 8px;
+      opacity: 0.75;
+    }
+
+    .card h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--text);
+      line-height: 1.2;
+      letter-spacing: -0.5px;
+    }
+
+    .card h1 span {
+      background: linear-gradient(135deg, #7c3aed, #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .card p.sub {
+      margin-top: 8px;
+      font-size: 13px;
+      color: var(--subtext);
+      line-height: 1.55;
+    }
+
+    /* ─── DIVIDER ───────────────────────── */
+    .sep {
+      width: 48px;
+      height: 3px;
+      background: linear-gradient(90deg, #7c3aed, #a78bfa);
+      border-radius: 100px;
+      margin: 20px auto;
+    }
+
+    /* ─── STEPS ─────────────────────────── */
+    .steps {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      margin-bottom: 28px;
+    }
+
+    .step {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--subtext);
+    }
+
+    .step-dot {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--bg);
+      box-shadow:
+        -3px -3px 6px var(--shadow-light),
+         3px  3px 6px var(--shadow-dark);
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--subtext);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .step.active .step-dot {
+      background: linear-gradient(135deg, #7c3aed, #a78bfa);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(124,58,237,0.3);
+    }
+
+    .step.active { color: var(--accent2); }
+
+    .step-line {
+      width: 20px;
+      height: 2px;
+      background: var(--shadow-dark);
+      border-radius: 2px;
+      opacity: 0.4;
+    }
+
+    /* ─── INPUT ─────────────────────────── */
+    .field-label {
+      text-align: left;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--subtext);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .input-wrap {
+      position: relative;
+      margin-bottom: 16px;
+    }
+
+    .input-wrap input {
+      width: 100%;
+      padding: 16px 18px 16px 48px;
+      border-radius: 16px;
+      border: none;
+      outline: none;
+      background: var(--bg);
+      font-family: 'Poppins', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+      box-shadow:
+        inset -5px -5px 10px var(--inset-light),
+        inset  5px  5px 10px var(--inset-dark);
+      transition: box-shadow 0.3s ease;
+    }
+
+    .input-wrap input::placeholder { color: var(--subtext); font-weight: 400; opacity: 0.7; }
+
+    .input-wrap input:focus {
+      box-shadow:
+        inset -5px -5px 10px var(--inset-light),
+        inset  5px  5px 10px var(--inset-dark),
+        0 0 0 2px rgba(124,58,237,0.25);
+    }
+
+    .input-icon {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 18px;
+      pointer-events: none;
+    }
+
+    /* ─── SUBMIT BUTTON ─────────────────── */
+    .btn-submit {
+      width: 100%;
+      padding: 16px;
+      border: none;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #7c3aed, #a78bfa);
+      color: #fff;
+      font-family: 'Poppins', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 0.5px;
+      box-shadow:
+        -4px -4px 10px var(--shadow-light),
+         4px  4px 10px var(--shadow-dark),
+         0 8px 20px rgba(124,58,237,0.3);
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-submit:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow:
+        -4px -4px 10px var(--shadow-light),
+         4px  4px 10px var(--shadow-dark),
+         0 14px 28px rgba(124,58,237,0.4);
+    }
+
+    .btn-submit:disabled {
+      opacity: 0.65;
+      cursor: wait;
+    }
+
+    /* Spinner */
+    .spin {
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ─── RESULT BOX ────────────────────── */
+    .result-box {
+      margin-top: 18px;
+      background: var(--bg);
+      border-radius: 16px;
+      padding: 18px 20px;
+      box-shadow:
+        inset -5px -5px 10px var(--inset-light),
+        inset  5px  5px 10px var(--inset-dark);
+      display: none;
+    }
+
+    .result-box.visible { display: block; animation: fadeIn 0.4s ease; }
+
+    @keyframes fadeIn { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }
+
+    .code-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: var(--subtext);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .code-value {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: 4px;
+      background: linear-gradient(135deg, #7c3aed, #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      cursor: pointer;
+      user-select: all;
+    }
+
+    .copy-hint {
+      font-size: 11px;
+      color: var(--subtext);
+      margin-top: 6px;
+      opacity: 0.7;
+    }
+
+    .error-msg {
+      font-size: 13px;
+      font-weight: 600;
+      color: #ef4444;
+    }
+
+    /* ─── ACTIONS ROW ───────────────────── */
+    .actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .btn-ghost {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 14px;
+      background: var(--bg);
+      font-family: 'Poppins', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--subtext);
+      cursor: pointer;
+      box-shadow:
+        -4px -4px 8px var(--shadow-light),
+         4px  4px 8px var(--shadow-dark);
+      transition: all 0.25s;
+    }
+
+    .btn-ghost:hover {
+      color: var(--accent2);
+      box-shadow:
+        -2px -2px 5px var(--shadow-light),
+         2px  2px 5px var(--shadow-dark);
+    }
+
+    /* ─── HELP TIPS ─────────────────────── */
+    .tips {
+      margin-top: 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .tip {
+      background: var(--bg);
+      border-radius: 14px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow:
+        -4px -4px 8px var(--shadow-light),
+         4px  4px 8px var(--shadow-dark);
+      text-align: left;
+    }
+
+    .tip-icon {
+      font-size: 18px;
+      min-width: 28px;
+    }
+
+    .tip-text {
+      font-size: 12px;
+      color: var(--subtext);
+      line-height: 1.45;
+      font-weight: 500;
+    }
+
+    .tip-text strong { color: var(--accent2); }
+
+    /* ─── FOOTER ────────────────────────── */
+    .card-footer {
+      margin-top: 28px;
+      font-size: 11px;
+      color: var(--subtext);
+      opacity: 0.6;
+    }
+
+    .card-footer strong { color: var(--accent2); opacity: 1; }
+
+    /* ─── RESPONSIVE ────────────────────── */
+    @media (max-width: 480px) {
+      .card { padding: 40px 22px 32px; border-radius: 24px; }
+      .back-link { top: 14px; left: 14px; padding: 8px 14px; font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+
+  <a href="/" class="back-link">← Home</a>
+
+  <div class="card">
+
+    <!-- Mini lotus -->
+    <div class="mini-lotus">
+      <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="mg1" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#7c3aed"/>
+            <stop offset="100%" style="stop-color:#c4b5fd"/>
+          </linearGradient>
+        </defs>
+        <ellipse cx="100" cy="90" rx="13" ry="40" fill="#a78bfa" opacity="0.6" transform="rotate(-40 100 120)"/>
+        <ellipse cx="100" cy="90" rx="13" ry="40" fill="#a78bfa" opacity="0.6" transform="rotate(0 100 120)"/>
+        <ellipse cx="100" cy="90" rx="13" ry="40" fill="#a78bfa" opacity="0.6" transform="rotate(40 100 120)"/>
+        <ellipse cx="100" cy="90" rx="13" ry="40" fill="#a78bfa" opacity="0.6" transform="rotate(-80 100 120)"/>
+        <ellipse cx="100" cy="90" rx="13" ry="40" fill="#a78bfa" opacity="0.6" transform="rotate(80 100 120)"/>
+        <ellipse cx="100" cy="95" rx="10" ry="30" fill="url(#mg1)" opacity="0.9" transform="rotate(-30 100 120)"/>
+        <ellipse cx="100" cy="95" rx="10" ry="30" fill="url(#mg1)" opacity="0.9" transform="rotate(0 100 120)"/>
+        <ellipse cx="100" cy="95" rx="10" ry="30" fill="url(#mg1)" opacity="0.9" transform="rotate(30 100 120)"/>
+        <ellipse cx="100" cy="95" rx="10" ry="30" fill="url(#mg1)" opacity="0.9" transform="rotate(60 100 120)"/>
+        <ellipse cx="100" cy="95" rx="10" ry="30" fill="url(#mg1)" opacity="0.9" transform="rotate(-60 100 120)"/>
+        <circle cx="100" cy="120" r="16" fill="url(#mg1)"/>
+        <circle cx="100" cy="120" r="9" fill="#ede9fe"/>
+        <circle cx="100" cy="120" r="4" fill="#7c3aed"/>
+      </svg>
+    </div>
+
+    <div class="tag">✦ ERANDA MD · Pair</div>
+    <h1>Connect Your<br/><span>WhatsApp</span></h1>
+    <p class="sub">Enter your number with country code to get your pairing code.</p>
+
+    <div class="sep"></div>
+
+    <!-- Steps -->
+    <div class="steps">
+      <div class="step active"><div class="step-dot">1</div><span>Enter Number</span></div>
+      <div class="step-line"></div>
+      <div class="step" id="step2"><div class="step-dot">2</div><span>Get Code</span></div>
+      <div class="step-line"></div>
+      <div class="step" id="step3"><div class="step-dot">3</div><span>Linked ✓</span></div>
+    </div>
+
+    <!-- Input -->
+    <div class="field-label">WhatsApp Number</div>
+    <div class="input-wrap">
+      <span class="input-icon">📱</span>
+      <input id="number" type="tel" placeholder="94xxxxxxxx" inputmode="numeric" pattern="[0-9]*" autocomplete="tel"/>
+    </div>
+
+    <button id="submitBtn" class="btn-submit">
+      <div class="spin" id="spin"></div>
+      <span id="btnLabel">🔗 Get Pairing Code</span>
+    </button>
+
+    <!-- Result -->
+    <div class="result-box" id="resultBox">
+      <div id="resultContent"></div>
+    </div>
+
+    <!-- Action row -->
+    <div class="actions">
+      <button class="btn-ghost" id="clearBtn">🗑 Clear</button>
+      <button class="btn-ghost" onclick="window.open('https://whatsapp.com/channel/0029Vb5OiseHltY10IBkF112/1066','_blank')">📢 Channel</button>
+    </div>
+
+    <!-- Tips -->
+    <div class="tips">
+      <div class="tip">
+        <span class="tip-icon">💡</span>
+        <span class="tip-text">Include country code — e.g. <strong>94712345678</strong> for Sri Lanka</span>
+      </div>
+      <div class="tip">
+        <span class="tip-icon">⚙️</span>
+        <span class="tip-text">In WhatsApp → Linked Devices → <strong>Link with phone number</strong> → Enter the code</span>
+      </div>
+      <div class="tip">
+        <span class="tip-icon">⏱️</span>
+        <span class="tip-text">Code is valid for <strong>60 seconds</strong> — enter it quickly after receiving</span>
+      </div>
+    </div>
+
+    <div class="card-footer">
+      <strong>ERANDA MD V1</strong> · ᴋᴇᶻᵘ · Built with 💜
+    </div>
+  </div>
+
+  <script>
+    const numInput  = document.getElementById('number');
+    const submitBtn = document.getElementById('submitBtn');
+    const spin      = document.getElementById('spin');
+    const btnLabel  = document.getElementById('btnLabel');
+    const resultBox = document.getElementById('resultBox');
+    const resultEl  = document.getElementById('resultContent');
+    const step2     = document.getElementById('step2');
+    const step3     = document.getElementById('step3');
+
+    function setLoading(on) {
+      submitBtn.disabled = on;
+      spin.style.display = on ? 'block' : 'none';
+      btnLabel.textContent = on ? 'Connecting...' : '🔗 Get Pairing Code';
+    }
+
+    function showResult(html) {
+      resultEl.innerHTML = html;
+      resultBox.classList.add('visible');
+    }
+
+    function activateStep(el) {
+      el.classList.add('active');
+      el.querySelector('.step-dot').style.background = 'linear-gradient(135deg,#7c3aed,#a78bfa)';
+      el.querySelector('.step-dot').style.color = '#fff';
+      el.querySelector('.step-dot').style.boxShadow = '0 4px 12px rgba(124,58,237,0.3)';
+    }
+
+    submitBtn.addEventListener('click', async () => {
+      const raw = numInput.value.replace(/[^0-9]/g, '');
+      if (raw.length < 10) {
+        showResult('<p class="error-msg">⚠️ Please enter a valid number with country code.</p>');
+        resultBox.classList.add('visible');
+        return;
+      }
+
+      setLoading(true);
+      activateStep(step2);
+      resultBox.classList.remove('visible');
+
+      try {
+        const res  = await fetch(`/code?number=${raw}`);
+        const data = await res.json();
+        const code = data.code || 'Error';
+
+        if (code === 'Error' || code === 'Service Unavailable') {
+          showResult(`<p class="error-msg">❌ ${code} — please try again.</p>`);
+        } else {
+          activateStep(step3);
+          showResult(`
+            <div class="code-label">Your Pairing Code</div>
+            <div class="code-value" id="codeVal" onclick="copyCode()" title="Tap to copy">${code}</div>
+            <div class="copy-hint">👆 Tap code to copy · Valid for 60s</div>
+          `);
+        }
+      } catch (e) {
+        showResult('<p class="error-msg">❌ Network error — check connection and retry.</p>');
+      } finally {
+        setLoading(false);
+      }
+    });
+
+    function copyCode() {
+      const el = document.getElementById('codeVal');
+      if (!el) return;
+      navigator.clipboard?.writeText(el.innerText.trim()).then(() => {
+        const orig = el.innerHTML;
+        el.innerHTML = '✅ Copied!';
+        el.style.fontSize = '18px';
+        setTimeout(() => { el.innerHTML = orig; el.style.fontSize = ''; }, 1200);
+      }).catch(() => {});
+    }
+
+    document.getElementById('clearBtn').addEventListener('click', () => {
+      numInput.value = '';
+      resultBox.classList.remove('visible');
+      resultEl.innerHTML = '';
+      [step2, step3].forEach(s => {
+        s.classList.remove('active');
+        const dot = s.querySelector('.step-dot');
+        dot.style.background = '';
+        dot.style.color = '';
+        dot.style.boxShadow = '';
+      });
+    });
+
+    numInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') submitBtn.click();
+    });
+  </script>
+</body>
+</html>
