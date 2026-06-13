@@ -1,5 +1,4 @@
-{
-  "name": "eranda-md-bot",
+name": "eranda-md-bot",
   "version": "2.0.0",
   "description": "ERANDA MD WhatsApp Bot with Multi-Number Support",
   "main": "index.js",
