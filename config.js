@@ -14,7 +14,7 @@ module.exports = {
     NEWS_JSON_URL: '',
     BOT_NAME: '𝐐𝐔𝐄𝐄𝐍 𝐑𝐄𝐃 𝐂𝐇𝐔𝐓𝐈 𝐌𝐃 𝐕1🐇📡',
     OWNER_NAME: '𝐐𝐔𝐄𝐄𝐍 𝐑𝐄𝐃 𝐂𝐇𝐔𝐓𝐈 𝐌𝐃 𝐕1🐇📡',
-    OWNER_NUMBER: '94705851067',
+    OWNER_NUMBER: '94740285058',
     WELCOME_OWNER: '94740285058',
     BOT_VERSION: '2.0.0',
     BOT_FOOTER: '> *𝐏𝙾𝚆𝙴𝚁𝙴𝙳 𝐁𝐘 𝐐𝐔𝐄𝐄𝐍 𝐑𝐄𝐃 𝐂𝐇𝐔𝐓𝐈 𝐌𝐃 𝐕1 🐇📡*',

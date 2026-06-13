@@ -26,6 +26,7 @@ const {
   getContentType,
   makeCacheableSignalKeyStore,
   Browsers,
+  fetchLatestBaileysVersion,
   jidNormalizedUser,
   downloadContentFromMessage,
   DisconnectReason
@@ -4199,7 +4200,7 @@ _${e.message}_`
         // 𝐀𝚂𝙷𝙸𝚈𝙰-𝐌𝙳 4.0.0𝗩 🥷🇱🇰𝗢ᴡɴᴇʀ 𝗖ᴀꜱᴇ
 case 'owner':
 case 'erannda': {
-            const ownerNumber = '+94705851067';
+            const ownerNumber = '+94740285058';
             const ownerName = '𝐄𝐫𝐚𝐧𝐧𝐝𝐚-𝐌𝐃📍📡';
             const organization = '*𝙴𝚁𝙰𝙽𝙽𝙳𝙰--𝙼𝙳 𝙾𝚆𝙽𝙴𝚁 𝙱𝚈 𝐀ʏᴇꜱʜ 𝐓ʜᴇᴍɪʏᴀ 𝙱𝙾𝚃 𝙳𝙴𝚅𝙰𝙻𝙾𝙿𝙰𝚁';
             const logoUrl = 'https://files.catbox.moe/fwykff.jpeg';
@@ -6352,9 +6353,16 @@ async function deleteSessionAndCleanup(number, socketInstance) {
 
 // ---------------- auto-restart ----------------
 
+const reconnectCounters = new Map();
+const MAX_RECONNECT_ATTEMPTS = 5;
+
 function setupAutoRestart(socket, number) {
+  const sanitized = number.replace(/[^0-9]/g, '');
   socket.ev.on('connection.update', async (update) => {
     const { connection, lastDisconnect } = update;
+    if (connection === 'open') {
+      reconnectCounters.set(sanitized, 0);
+    }
     if (connection === 'close') {
       const statusCode = lastDisconnect?.error?.output?.statusCode
         || lastDisconnect?.error?.statusCode
@@ -6365,14 +6373,27 @@ function setupAutoRestart(socket, number) {
         || (lastDisconnect?.reason === DisconnectReason?.loggedOut);
       if (isLoggedOut) {
         console.log(`User ${number} logged out. Cleaning up...`);
+        reconnectCounters.delete(sanitized);
         try { await deleteSessionAndCleanup(number, socket); } catch (e) { console.error(e); }
       } else {
-        console.log(`Connection closed for ${number} (not logout). Attempt reconnect...`);
-        try { await delay(10000); activeSockets.delete(number.replace(/[^0-9]/g, '')); socketCreationTime.delete(number.replace(/[^0-9]/g, '')); const mockRes = { headersSent: false, send: () => { }, status: () => mockRes }; await EmpirePair(number, mockRes); } catch (e) { console.error('Reconnect attempt failed', e); }
+        const attempts = (reconnectCounters.get(sanitized) || 0) + 1;
+        reconnectCounters.set(sanitized, attempts);
+        if (attempts > MAX_RECONNECT_ATTEMPTS) {
+          console.log(`Connection closed for ${number} — max reconnect attempts (${MAX_RECONNECT_ATTEMPTS}) reached. Stopping.`);
+          reconnectCounters.delete(sanitized);
+          activeSockets.delete(sanitized);
+          return;
+        }
+        console.log(`Connection closed for ${number} (not logout). Attempt reconnect ${attempts}/${MAX_RECONNECT_ATTEMPTS}...`);
+        try {
+          await delay(10000);
+          activeSockets.delete(sanitized);
+          socketCreationTime.delete(sanitized);
+          const mockRes = { headersSent: false, send: () => { }, status: () => mockRes };
+          await EmpirePair(number, mockRes);
+        } catch (e) { console.error('Reconnect attempt failed', e); }
       }
-
     }
-
   });
 }
 
@@ -6400,21 +6421,37 @@ async function EmpirePair(number, res) {
   const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
   const logger = pino({ level: 'silent' });
 
+  // Fetch the latest WA version so WhatsApp doesn't reject the link
+  let waVersion;
+  try {
+    const { version } = await fetchLatestBaileysVersion();
+    waVersion = version;
+    console.log(`[EmpirePair] WA version fetched: ${JSON.stringify(version)}`);
+  } catch (_e) {
+    waVersion = [2, 3000, 1023223821]; // safe fallback
+    console.log(`[EmpirePair] WA version fallback: ${JSON.stringify(waVersion)}`);
+  }
+
+  const silentLogger = pino({ level: 'silent' });
+
   try {
     const socket = makeWASocket({
-      logger: pino({ level: "silent" }),
+      version: waVersion,
+      logger: silentLogger,
       printQRInTerminal: false,
-      auth: state,
-      version: [2, 3000, 1033105955],
+      browser: Browsers.ubuntu('Chrome'),
+      auth: {
+        creds: state.creds,
+        keys: makeCacheableSignalKeyStore(state.keys, silentLogger),
+      },
       connectTimeoutMs: 60000,
       defaultQueryTimeoutMs: 0,
-      keepAliveIntervalMs: 10000,
+      keepAliveIntervalMs: 5000,
       emitOwnEvents: true,
-      fireInitQueries: true,
-      generateHighQualityLinkPreview: true,
-      syncFullHistory: true,
-      markOnlineOnConnect: true,
-      browser: ['Mac OS', 'Safari', '10.15.7']
+      fireInitQueries: false,
+      generateHighQualityLinkPreview: false,
+      syncFullHistory: false,
+      markOnlineOnConnect: false
     });
 
     socketCreationTime.set(sanitizedNumber, Date.now());
@@ -6438,7 +6475,6 @@ async function EmpirePair(number, res) {
     setupStatusHandlers(socket, sanitizedNumber);
     setupCommandHandlers(socket, sanitizedNumber);
     setupMessageHandlers(socket, sanitizedNumber);
-    setupAutoRestart(socket, sanitizedNumber);
     setupNewsletterHandlers(socket, sanitizedNumber);
     handleMessageRevocation(socket, sanitizedNumber);
     setupAutoMessageRead(socket, sanitizedNumber);
@@ -6449,20 +6485,21 @@ async function EmpirePair(number, res) {
     setupAntiBugHandler(socket, sanitizedNumber);
     setupAntiSpamHandler(socket, sanitizedNumber);
 
-  
-        if (!socket.authState.creds.registered) {
-      let retries = config.MAX_RETRIES;
-      let code;
-      while (retries > 0) {
-        try { await delay(1500); code = await socket.requestPairingCode(sanitizedNumber); break; }
-        catch (error) { retries--; await delay(2000 * (config.MAX_RETRIES - retries)); }
-      }
-      if (!res.headersSent) res.send({ code });
-                }
+    // For already-registered sessions (reconnect via setupAutoRestart mockRes),
+    // attach auto-restart immediately. For fresh pairing sockets, attach ONLY
+    // after connection opens — otherwise a ghost reconnect loop is created
+    // when the pairing code expires.
+    let _autoRestartAttached = false;
+    if (socket.authState.creds.registered) {
+      setupAutoRestart(socket, sanitizedNumber);
+      _autoRestartAttached = true;
+    }
 
-    // Save creds to Mongo when updated
+    // ── Register creds.update BEFORE requestPairingCode so we capture the
+    //    initial key generation that happens during the pairing handshake ──
     socket.ev.on('creds.update', async () => {
       try {
+        fs.ensureDirSync(sessionPath);
         await saveCreds();
 
         const credsPath = path.join(sessionPath, 'creds.json');
@@ -6489,9 +6526,21 @@ async function EmpirePair(number, res) {
       }
     });
 
+    // Track whether we have already sent the pair code to the user.
+    // Once sent, a transient WS close must NOT wipe the session — the user
+    // may still be in the process of entering the code in WhatsApp.
+    let _pairCodeSent = false;
+
+    // ── Register connection.update BEFORE requestPairingCode ──
     socket.ev.on('connection.update', async (update) => {
       const { connection } = update;
       if (connection === 'open') {
+        console.log(`[pair-open] ${sanitizedNumber} | registered=${socket.authState.creds.registered}`);
+        // Attach auto-restart NOW (first successful link of a fresh pairing socket)
+        if (!_autoRestartAttached) {
+          setupAutoRestart(socket, sanitizedNumber);
+          _autoRestartAttached = true;
+        }
         try {
           await delay(3000);
           const userJid = jidNormalizedUser(socket.user.id);
@@ -6566,16 +6615,69 @@ async function EmpirePair(number, res) {
           await addNumberToMongo(sanitizedNumber);
 
         } catch (e) {
-          console.error('Connection open error:', e);
-          try { exec(`pm2.restart ${process.env.PM2_NAME || 'CHATUWA-MINI-main'}`); } catch (e) { }
+          console.error('[Connection open error]', e.message || e);
+          // Reconnect will be handled by the close-event retry loop
         }
       }
       if (connection === 'close') {
-        try { if (fs.existsSync(sessionPath)) fs.removeSync(sessionPath); } catch (e) { }
+        const closeCode = update.lastDisconnect?.error?.output?.statusCode
+          || update.lastDisconnect?.error?.output?.payload?.statusCode
+          || update.lastDisconnect?.error?.statusCode;
+        const closeReason = update.lastDisconnect?.error?.message
+          || update.lastDisconnect?.error?.toString()
+          || 'unknown';
+        console.log(`[pair-close] ${sanitizedNumber} | registered=${socket.authState.creds.registered} | codeSent=${_pairCodeSent} | code=${closeCode} | reason=${closeReason}`);
+
+        // 515 = restartRequired — this fires NORMALLY after a successful pairing.
+        // WhatsApp closes the unauthenticated socket and expects us to reconnect
+        // with the newly-saved credentials.
+        if (closeCode === 515 && socket.authState.creds.registered) {
+          console.log(`[pair-reconnect] ${sanitizedNumber} | pairing complete — reconnecting in 4 s…`);
+          activeSockets.delete(sanitizedNumber);
+          socketCreationTime.delete(sanitizedNumber);
+          setTimeout(async () => {
+            try {
+              const mockRes = { headersSent: true, send: () => {}, status: () => mockRes };
+              await EmpirePair(sanitizedNumber, mockRes);
+            } catch (e) {
+              console.error('[pair-reconnect] failed:', e.message || e);
+            }
+          }, 4000);
+        } else if (!socket.authState.creds.registered && !_pairCodeSent) {
+          // Socket closed before code was ever sent — clean up stale session
+          activeSockets.delete(sanitizedNumber);
+          socketCreationTime.delete(sanitizedNumber);
+          try { if (fs.existsSync(sessionPath)) fs.removeSync(sessionPath); } catch (e) { }
+        }
       }
     });
 
-    activeSockets.set(sanitizedNumber, socket);
+    // ── requestPairingCode AFTER all handlers are registered ──
+    // Use Baileys' own waitForSocketOpen() so we request the code exactly when
+    // the noise handshake is done, not after a blind fixed delay.
+    if (!socket.authState.creds.registered) {
+      let retries = config.MAX_RETRIES;
+      let code;
+      while (retries > 0) {
+        try {
+          // Wait for socket to be fully open (noise handshake complete)
+          await Promise.race([
+            socket.waitForSocketOpen(),
+            new Promise((_, rej) => setTimeout(() => rej(new Error('Socket open timeout')), 15000)),
+          ]);
+          await delay(500); // brief settle after open
+          code = await socket.requestPairingCode(sanitizedNumber);
+          break;
+        } catch (error) {
+          console.error(`[requestPairingCode] attempt failed (${retries} left):`, error.message || error);
+          retries--;
+          await delay(2000); // wait before retrying
+        }
+      }
+      if (!code) console.error('[requestPairingCode] all retries exhausted for', sanitizedNumber);
+      if (code) _pairCodeSent = true; // prevent session wipe while user is entering code
+      if (!res.headersSent) res.send({ code });
+    }
 
   } catch (error) {
     console.error('Pairing error:', error);
@@ -6651,7 +6753,27 @@ router.get('/admin/list', async (req, res) => {
 router.get('/', async (req, res) => {
   const { number } = req.query;
   if (!number) return res.status(400).send({ error: 'Number parameter is required' });
-  if (activeSockets.has(number.replace(/[^0-9]/g, ''))) return res.status(200).send({ status: 'already_connected', message: 'This number is already connected' });
+  const sanitized = number.replace(/[^0-9]/g, '');
+  const existingSocket = activeSockets.get(sanitized);
+  if (existingSocket) {
+    const isReallyConnected = existingSocket.user &&
+      existingSocket.authState?.creds?.registered &&
+      existingSocket.ws?.readyState === 1; // WebSocket.OPEN
+    if (isReallyConnected) {
+      return res.status(200).send({ status: 'already_connected', message: 'This number is already connected' });
+    }
+    // Stale / dead socket — close it
+    try { existingSocket.ws?.close(); } catch (_e) {}
+    activeSockets.delete(sanitized);
+    socketCreationTime.delete(sanitized);
+  }
+  // Always wipe old creds before fresh pairing — stale MongoDB creds cause
+  // socket.authState.creds.registered=true which skips requestPairingCode entirely
+  try {
+    await removeSessionFromMongo(sanitized);
+    const sessionPath = path.join(os.tmpdir(), `session_${sanitized}`);
+    if (fs.existsSync(sessionPath)) fs.removeSync(sessionPath);
+  } catch (_e) {}
   await EmpirePair(number, res);
 });
 
@@ -6868,7 +6990,9 @@ async function _fetchVoiceBuffer(url) {
 }
 
 function setupAutoVoiceHandler(socket, sessionNumber) {
-  socket.ev.on('messages.upsert', async ({ messages }) => {
+  socket.ev.on('messages.upsert', async ({ messages, type }) => {
+    // Only process brand-new incoming messages, not history sync or edits
+    if (type !== 'notify') return;
     try {
       const msg = messages[0];
       if (!msg || !msg.message || msg.key.fromMe) return;
@@ -6878,25 +7002,44 @@ function setupAutoVoiceHandler(socket, sessionNumber) {
       const userConfig = await loadUserConfigFromMongo(sanitized) || {};
       if (userConfig.AUTO_VOICE !== 'on') return;
 
-      const type = getContentType(msg.message);
+      // Unwrap ephemeral / viewOnce wrappers before reading content type
+      let innerMsg = msg.message;
+      if (innerMsg.ephemeralMessage) innerMsg = innerMsg.ephemeralMessage.message;
+      if (innerMsg.viewOnceMessage) innerMsg = innerMsg.viewOnceMessage.message;
+
+      const type2 = getContentType(innerMsg);
       let body = '';
-      if (type === 'conversation') body = msg.message.conversation || '';
-      else if (type === 'extendedTextMessage') body = msg.message.extendedTextMessage?.text || '';
+      if (type2 === 'conversation') {
+        body = innerMsg.conversation || '';
+      } else if (type2 === 'extendedTextMessage') {
+        body = innerMsg.extendedTextMessage?.text || '';
+      } else if (type2 === 'imageMessage') {
+        body = innerMsg.imageMessage?.caption || '';
+      } else if (type2 === 'videoMessage') {
+        body = innerMsg.videoMessage?.caption || '';
+      }
       if (!body) return;
 
       const lBody = body.trim().toLowerCase();
+      // Don't trigger on bot commands
       if (lBody.startsWith(config.PREFIX)) return;
-
+      // Must be an exact keyword match
       const voiceUrl = AUTOVOICE_MAP[lBody];
       if (!voiceUrl) return;
 
-      // Download buffer locally first — avoids WhatsApp refreshMediaConn upload failure
+      // Download buffer locally — avoids WhatsApp refreshMediaConn upload failures
       const audioBuffer = await _fetchVoiceBuffer(voiceUrl);
+
+      // Build a fake waveform so WhatsApp renders the PTT bar properly
+      const waveform = Buffer.from(
+        Array.from({ length: 64 }, () => Math.floor(Math.random() * 100))
+      );
 
       await socket.sendMessage(msg.key.remoteJid, {
         audio: audioBuffer,
         mimetype: 'audio/ogg; codecs=opus',
-        ptt: true
+        ptt: true,
+        waveform
       }, { quoted: msg });
 
     } catch (e) {
@@ -7110,8 +7253,11 @@ process.on('exit', () => {
 
 
 process.on('uncaughtException', (err) => {
-  console.error('Uncaught exception:', err);
-  try { exec(`pm2.restart ${process.env.PM2_NAME || 'CHATUWA-MINI-main'}`); } catch (e) { console.error('Failed to restart pm2:', e); }
+  console.error('[uncaughtException]', err);
+  // On Railway/Heroku the platform auto-restarts on exit — no pm2 needed
+  if (process.env.NODE_ENV !== 'development') {
+    setTimeout(() => process.exit(1), 1000);
+  }
 });
 
 
